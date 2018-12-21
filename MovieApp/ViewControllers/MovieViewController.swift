@@ -35,6 +35,7 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
     @IBOutlet weak var castAndCrewLabel: UILabel!
     @IBOutlet weak var recomendedLabel: UILabel!
     
+    @IBOutlet weak var shareButton: UIButton!
     @IBOutlet weak var releaseDateLabel: UILabel!
     @IBOutlet weak var runTimeLabel: UILabel!
     @IBOutlet weak var ratingView: RatingView!
@@ -44,6 +45,7 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
     @IBOutlet weak var posterImage: UIImageView!
     @IBOutlet weak var posterImageHeightContraint: NSLayoutConstraint!
     @IBOutlet weak var scrollView: UIScrollView!
+    var share: UIBarButtonItem!
     var backgroundImage: UIImageView!
     var backgroundImageOrigin: CGPoint!
     var watchlistTitle:String?
@@ -55,6 +57,7 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
     
     let movieHelper = MovieHelper()
     let personHelper = PersonHelper()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -63,10 +66,11 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
         backgroundImage.image = UIImage(named: "background Image placeholder")
         backgroundImage.clipsToBounds = true
         self.view.insertSubview(backgroundImage, at: 0)
+        
+        shareButton.addTarget(self, action: #selector(sharePressed(sender:)), for: .touchUpInside)
 
 
         managedObjectContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
-        setUpAnimation()
         if let movie = self.movie{
             setupMovieInfo()
             setOtherScrollViews(id: movie.id)
@@ -82,9 +86,19 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
             setOtherScrollViews(id: watchlistMovieID!)
             self.inWatchList = true;
         }
+
         
-        if inWatchList{self.addToWatchlistButton.image = UIImage(named: "addPressed")}
-        else {self.addToWatchlistButton.image = UIImage(named: "addUnpressed")}
+        share = UIBarButtonItem.init(barButtonSystemItem: .action, target: self, action: #selector(sharePressed(sender:)))
+        navigationItem.rightBarButtonItems?.insert(share, at: 1)
+        let b = UIButton()
+        b.addTarget(self, action: #selector(addToWatchlist(sender:)), for: .touchUpInside)
+        
+        if inWatchList{b.setImage(UIImage(named: "addPressed"), for: .normal)}
+        else {b.setImage(UIImage(named: "addUnpressed"), for: .normal)}
+        self.addToWatchlistButton.customView = b
+        
+        setUpAnimation()
+
         
         let layout = UICollectionViewFlowLayout()
         layout.itemSize = CGSize(width: 118, height: 160)
@@ -117,8 +131,15 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
         noCastLabel.alpha = 0
         
         loadingView.layer.cornerRadius = 10
-        
+                
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.navigationBar.tintAdjustmentMode = .normal
+        self.navigationController?.navigationBar.tintAdjustmentMode = .automatic
+    }
+    
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(true)
         if self.isBeingPresented || self.isMovingToParent {
@@ -401,10 +422,12 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
         plotConstraint.constant = -self.view.frame.width
         plotLabelConstraint.constant = -self.view.frame.width
         addToWatchlistButton.isEnabled = false
+        share.isEnabled = false
     }
     
     func doAnimation(){
         addToWatchlistButton.isEnabled = true
+        share.isEnabled = true
         loadingView.alpha = 0
         loadingViewIndicator.stopAnimating()
 
@@ -456,19 +479,19 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
     
     var inWatchList: Bool = false
     
-    @IBAction func addToWatchlist(_ sender: UIBarButtonItem) {
+    @objc func addToWatchlist(sender:UIButton){
         //Is NOT Pressed
         if inWatchList == false{
             let alert = UIAlertController(title: "Add movie to watchlist?", message: nil, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
             alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { (uialert) in
                 self.saveToWatchlist()
-                sender.image = UIImage(named: "addPressed")
+                sender.setImage(UIImage(named: "addPressed"), for: .normal)
                 self.inWatchList = true;
             }))
             self.present(alert, animated: true)
         }
-        //Is Pressed
+            //Is Pressed
         else{
             let alert = UIAlertController(title: "Remove movie from watchlist?", message: nil, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
@@ -477,7 +500,7 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
                 if let mov = self.movie{movieID = mov.id}
                 else{movieID = self.watchlistMovieID}
                 self.removeFromWatchlist(movieID: movieID!)
-                sender.image = UIImage(named: "addUnpressed")
+                sender.setImage(UIImage(named: "addUnpressed"), for: .normal)
                 self.inWatchList = false;
             }))
             self.present(alert, animated: true)
@@ -505,5 +528,17 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
         } catch{
             print("Error deleting core data object with id \(movieID) : \(error.localizedDescription)")
         }
+    }
+    
+    @objc func sharePressed(sender: UIButton){
+        var items = [Any]()
+        items.append("Check out \"\(self.movieTitle.text!)\" on Cinema Search!")
+        let url = URL(string: "itms-apps://itunes.apple.com/us/app/CinemaSearch/id1442019304?ls=1&mt=8")!
+        items.append(url)
+        if self.backgroundImage.image != UIImage(named: "background Image placeholder"){
+            items.append(self.backgroundImage.image!)
+        }
+        let activityController = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        present(activityController, animated: true, completion: nil)
     }
 }

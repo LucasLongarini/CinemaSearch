@@ -48,7 +48,7 @@ class TVViewController: UIViewController, UIScrollViewDelegate, UICollectionView
     @IBOutlet weak var ratingLabel: UILabel!
     @IBOutlet weak var releaseDate: UILabel!
     @IBOutlet weak var plotLabel: UILabel!
-    
+    var share:UIBarButtonItem!
     @IBOutlet weak var ratingView: RatingView!
     @IBOutlet weak var posterImageTopConstraint: NSLayoutConstraint!
     @IBOutlet weak var posterImage: UIImageView!
@@ -71,7 +71,7 @@ class TVViewController: UIViewController, UIScrollViewDelegate, UICollectionView
         let backBTN = UIBarButtonItem(image: UIImage(named: "back icon"),style: .plain,target: navigationController,action: #selector(UINavigationController.popViewController(animated:)))
         navigationItem.leftBarButtonItem = backBTN
         navigationController?.interactivePopGestureRecognizer?.delegate = self as? UIGestureRecognizerDelegate
-        setUpAnimation()
+        
         if let tv = self.tv{
             downloadBackroundImage()
             setUpScrollViews(id: tv.id)
@@ -84,8 +84,18 @@ class TVViewController: UIViewController, UIScrollViewDelegate, UICollectionView
             self.inWatchList = true;
         }
         
-        if inWatchList{self.addToWatchlistButton.image = UIImage(named: "addPressed")}
-        else {self.addToWatchlistButton.image = UIImage(named: "addUnpressed")}
+        share = UIBarButtonItem.init(barButtonSystemItem: .action, target: self, action: #selector(sharePressed(sender:)))
+        navigationItem.rightBarButtonItems?.insert(share, at: 1)
+        
+        let b = UIButton()
+        b.addTarget(self, action: #selector(addToWatchlist(sender:)), for: .touchUpInside)
+        
+        if inWatchList{b.setImage(UIImage(named: "addPressed"), for: .normal)}
+        else {b.setImage(UIImage(named: "addUnpressed"), for: .normal)}
+        self.addToWatchlistButton.customView = b
+        
+        setUpAnimation()
+        
         loadingView.layer.cornerRadius = 10
         noSeasonLabel.alpha = 0
         noCaseLabel.alpha = 0
@@ -429,10 +439,12 @@ class TVViewController: UIViewController, UIScrollViewDelegate, UICollectionView
         self.castCollectionView.alpha = 0
         self.recommendedCollectionView.alpha = 0
         self.addToWatchlistButton.isEnabled = false
+        share.isEnabled = false
     }
     
     func doAnimation(){
         self.addToWatchlistButton.isEnabled = true
+        share.isEnabled = true
         loadingView.alpha = 0
         activityIcon.stopAnimating()
         if tv.voteAverage > 0{
@@ -488,14 +500,14 @@ class TVViewController: UIViewController, UIScrollViewDelegate, UICollectionView
     
     var inWatchList: Bool = false
 
-    @IBAction func addToWatchListPressed(_ sender: Any) {
+    @objc func addToWatchlist(sender: UIButton) {
         //Is NOT Pressed
         if inWatchList == false{
             let alert = UIAlertController(title: "Add show to watchlist?", message: nil, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
             alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { (uialert) in
                 self.saveToWatchlist()
-                (sender as! UIBarButtonItem).image = UIImage(named: "addPressed")
+                sender.setImage(UIImage(named: "addPressed"), for: .normal)
                 self.inWatchList = true;
             }))
             self.present(alert, animated: true)
@@ -508,7 +520,7 @@ class TVViewController: UIViewController, UIScrollViewDelegate, UICollectionView
                 if let tv = self.tv{tvID = tv.id}
                 else{tvID = self.watchListTvID}
                 self.removeFromWatchList(tvID: tvID!)
-                (sender as! UIBarButtonItem).image = UIImage(named: "addUnpressed")
+                sender.setImage(UIImage(named: "addUnpressed"), for: .normal)
                 self.inWatchList = false;
             }))
             self.present(alert, animated: true)
@@ -563,5 +575,14 @@ class TVViewController: UIViewController, UIScrollViewDelegate, UICollectionView
         }else{self.semaphore.signal()}
     }
 
+    @objc func sharePressed(sender: UIButton){
+        var items = [Any]()
+        items.append("Check out Tv Series \"\(self.titleLabel.text!)\" on Cinema Search! (URL)")
+        if self.backgroundImage.image != UIImage(named: "background Image placeholder"){
+            items.append(self.backgroundImage.image!)
+        }
+        let activityController = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        present(activityController, animated: true, completion: nil)
+    }
 
 }
