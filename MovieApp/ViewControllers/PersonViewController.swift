@@ -194,6 +194,10 @@ class PersonViewController: UIViewController, UICollectionViewDelegate, UICollec
             }
         }else{self.semaphore.signal()}
     }
-
+    
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        ImageCache.shared.imageCache.removeAllObjects()
+    }
     
 }

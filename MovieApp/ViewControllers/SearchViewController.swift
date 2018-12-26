@@ -424,4 +424,9 @@ class SearchViewController: UIViewController, UISearchBarDelegate, UICollectionV
         }
     }
     
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        ImageCache.shared.imageCache.removeAllObjects()
+    }
+    
 }

@@ -453,6 +453,11 @@ class DiscoverViewController: UIViewController, UIScrollViewDelegate,UICollectio
         }else{self.semaphore.signal()}
     }
 
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        ImageCache.shared.imageCache.removeAllObjects()
+    }
+
     
 }
 

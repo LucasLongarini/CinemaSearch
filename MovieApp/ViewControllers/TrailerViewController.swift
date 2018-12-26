@@ -80,6 +80,7 @@ class TrailerViewController: UIViewController, UITableViewDelegate, UITableViewD
                     if trailers.count != 0{
                         self.trailers = trailers
                         DispatchQueue.main.async {
+                            self.doAnimation()
                         }
                     }
                     else{
@@ -139,6 +140,11 @@ class TrailerViewController: UIViewController, UITableViewDelegate, UITableViewD
         self.loadingView.alpha = 0
         self.loadingIcon.stopAnimating()
         self.trailerTableView.reloadData()
+    }
+    
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        ImageCache.shared.imageCache.removeAllObjects()
     }
 
 }

@@ -214,4 +214,8 @@ class WatchListViewController: UIViewController, UITableViewDelegate, UITableVie
         }
     }
     
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        ImageCache.shared.imageCache.removeAllObjects()
+    }
 }

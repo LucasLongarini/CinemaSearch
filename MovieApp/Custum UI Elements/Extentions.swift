@@ -46,6 +46,16 @@ extension UIImageView{
     
 }
 
+extension UIViewController{
+    
+    func displayError(title:String, description:String){
+        let alert = UIAlertController(title: title, message: description, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+        self.present(alert, animated: true)
+    }
+    
+}
+
 extension CALayer{
     func addDropShadow(){
         self.shadowOffset = CGSize(width: 0, height: 2.0)
@@ -138,5 +148,31 @@ extension String{
         }else{
             return self
         }
+    }
+}
+
+extension Date{
+    func toString()->String{
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MMMM dd, yyyy"
+        return dateFormatter.string(from: self)
+    }
+}
+
+extension UILabel {
+    
+    var isTruncated: Bool {
+        
+        guard let labelText = text else {
+            return false
+        }
+        
+        let labelTextSize = (labelText as NSString).boundingRect(
+            with: CGSize(width: frame.size.width, height: .greatestFiniteMagnitude),
+            options: .usesLineFragmentOrigin,
+            attributes: [.font: font],
+            context: nil).size
+        
+        return labelTextSize.height > bounds.size.height
     }
 }

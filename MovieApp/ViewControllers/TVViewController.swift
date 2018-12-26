@@ -584,5 +584,10 @@ class TVViewController: UIViewController, UIScrollViewDelegate, UICollectionView
         let activityController = UIActivityViewController(activityItems: items, applicationActivities: nil)
         present(activityController, animated: true, completion: nil)
     }
+    
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        ImageCache.shared.imageCache.removeAllObjects()
+    }
 
 }

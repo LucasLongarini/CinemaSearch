@@ -286,5 +286,8 @@ class TVEpisodeViewController: UIViewController, UIScrollViewDelegate, UICollect
         }else{self.semaphore.signal()}
     }
 
-    
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        ImageCache.shared.imageCache.removeAllObjects()
+    }
 }

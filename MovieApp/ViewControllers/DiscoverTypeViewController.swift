@@ -424,4 +424,8 @@ class DiscoverTypeViewController: UIViewController, UICollectionViewDataSource, 
         
     }
 
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        ImageCache.shared.imageCache.removeAllObjects()
+    }
 }

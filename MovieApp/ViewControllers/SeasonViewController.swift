@@ -270,4 +270,9 @@ class SeasonViewController: UIViewController, UITableViewDelegate, UITableViewDa
         }else{self.semaphore.signal()}
     }
 
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        ImageCache.shared.imageCache.removeAllObjects()
+    }
+    
 }

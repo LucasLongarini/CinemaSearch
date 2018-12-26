@@ -27,6 +27,7 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
     var movie: Movie!
     var posterUIImage: UIImage!
 
+    @IBOutlet weak var reviewButton: UIButton!
     @IBOutlet weak var shadowView: UIView!
     @IBOutlet weak var scrollViewBottomConstraint: NSLayoutConstraint!
     @IBOutlet weak var playTrailerButton: UIButton!
@@ -66,11 +67,12 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
         backgroundImage.image = UIImage(named: "background Image placeholder")
         backgroundImage.clipsToBounds = true
         self.view.insertSubview(backgroundImage, at: 0)
+        reviewButton.imageView?.contentMode = .scaleAspectFit
         
         shareButton.addTarget(self, action: #selector(sharePressed(sender:)), for: .touchUpInside)
 
-
         managedObjectContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+        getNumberOfReviews()
         if let movie = self.movie{
             setupMovieInfo()
             setOtherScrollViews(id: movie.id)
@@ -134,18 +136,18 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
                 
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        self.navigationController?.navigationBar.tintAdjustmentMode = .normal
-        self.navigationController?.navigationBar.tintAdjustmentMode = .automatic
-    }
+//    override func viewWillAppear(_ animated: Bool) {
+//        super.viewWillAppear(animated)
+//        self.navigationController?.navigationBar.tintAdjustmentMode = .normal
+//        self.navigationController?.navigationBar.tintAdjustmentMode = .automatic
+//    }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(true)
         if self.isBeingPresented || self.isMovingToParent {
             self.semaphore.wait()
             totalDownloaded += 1
-            if totalDownloaded == 5{
+            if totalDownloaded == 6{
                 self.semaphore.signal()
                 doAnimation()
             }
@@ -229,7 +231,7 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
     func checkDownload(){
         self.semaphore.wait()
         self.totalDownloaded += 1
-        if self.totalDownloaded == 5{
+        if self.totalDownloaded == 6{
             self.semaphore.signal()
             DispatchQueue.main.async {
                 self.doAnimation()
@@ -390,6 +392,13 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
                 dest.personImage = imageToSend
             }
         }
+        else if segue.identifier == "MovieToReview"{
+            if let dest = segue.destination as? ReviewViewController{
+                dest.mediaTitle = self.movieTitle.text
+                dest.mediaID = self.movie.id
+                dest.reviewType = ReviewType.Movie
+            }
+        }
     }
 
     
@@ -422,6 +431,7 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
         plotConstraint.constant = -self.view.frame.width
         plotLabelConstraint.constant = -self.view.frame.width
         addToWatchlistButton.isEnabled = false
+        self.reviewButton.alpha = 0
         share.isEnabled = false
     }
     
@@ -444,6 +454,7 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
             self.posterImageConstraint.constant = 15
             self.ratingLabel.alpha = 1
             self.ratingView.alpha = 1
+            self.reviewButton.alpha = 1
             self.playTrailerButton.alpha = 1
             self.view.layoutIfNeeded()
         }, completion: nil)
@@ -541,4 +552,52 @@ class MovieViewController: UIViewController, UIScrollViewDelegate, UICollectionV
         let activityController = UIActivityViewController(activityItems: items, applicationActivities: nil)
         present(activityController, animated: true, completion: nil)
     }
+    
+    var noReviews:Bool = true
+    func getNumberOfReviews(){
+        var movieID:Int
+        if let id = self.watchlistMovieID{movieID = id}
+        else{movieID = self.movie.id}
+        DatabaseHelper.getNumberOfReviews(for: .Movie, mediaID: movieID) { (number) in
+            if number <= 0{
+                self.noReviews = true
+                DispatchQueue.main.async {
+                    self.reviewButton.setTitle("Write a Review", for: .normal)
+                }
+                self.checkDownload()
+            }
+            else{
+                self.noReviews = false
+                DispatchQueue.main.async {
+                    self.reviewButton.setTitle("\(number) Review"+"\((number > 1 ? "s":""))", for: .normal)
+                }
+                self.checkDownload()
+            }
+        }
+    }
+    
+    @IBAction func reviewPressed(_ sender: Any) {
+        if noReviews{
+            if UserSingleton.shared.isLoggedIn{
+                guard let write = self.storyboard?.instantiateViewController(withIdentifier: "WriteReviewViewController") as? WriteReviewViewController else{return}
+                write.mediaTitle = self.movieTitle.text
+                write.mediaID = self.movie.id
+                write.reviewType = ReviewType.Movie
+                write.firstReview = true
+                self.navigationController?.pushViewController(write, animated: true)
+            }
+            else{
+                performSegue(withIdentifier: "MovieToLogin", sender: self)
+            }
+        }
+        else{
+            performSegue(withIdentifier: "MovieToReview", sender: self)
+        }
+    }
+    
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        ImageCache.shared.imageCache.removeAllObjects()
+    }
+    
 }

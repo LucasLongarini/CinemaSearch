@@ -283,5 +283,8 @@ class TopRatedViewController: UIViewController, UICollectionViewDelegate, UIColl
         }
     }
     
-    
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        ImageCache.shared.imageCache.removeAllObjects()
+    }
 }

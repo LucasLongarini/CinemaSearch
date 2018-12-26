@@ -21,8 +21,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
         FirebaseApp.configure()
+        let db = Firestore.firestore()
+        let settings = db.settings
+        settings.areTimestampsInSnapshotsEnabled = true
+        db.settings = settings
         
-//        let initialTime:Double = CACurrentMediaTime();
         UINavigationBar.appearance().shadowImage = UIImage()
         let movieHelper = MovieHelper()
         
@@ -37,6 +40,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         var comingSoonMovies = [Movie]()
         
         group.enter()
+        Auth.auth().addStateDidChangeListener { (auth, user) in
+            if user != nil{
+                DatabaseHelper.getUser(uid: user!.uid, completion: { (user) in
+                    if let user = user{
+                        UserSingleton.shared.isLoggedIn = true
+                        UserSingleton.shared.user = user
+                        UserSingleton.shared.downloadImage()
+                    }
+                    else{
+                        print("Error retreiving user")
+                        UserSingleton.shared.isLoggedIn = false
+                    }
+                })
+            }
+            else{
+               UserSingleton.shared.isLoggedIn = false
+            }
+        }
+        
         movieHelper.downloadMovies(type: .popular, page: 1) { (movies) in
             popularMovies = movies
             semaphore.wait()
@@ -67,11 +89,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             firstController.allMovieData.upComingMovies = comingSoonMovies
         }
         
-//        let finalTime:Double = CACurrentMediaTime();
-//        let totalTime:Double = finalTime - initialTime
-//        if totalTime < 3{
-//            RunLoop.current.run(until: Date(timeIntervalSinceNow: (3-totalTime)))
-//        }
         return true
     }
 
